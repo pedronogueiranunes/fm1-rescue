@@ -2,6 +2,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const [url, profile, output] = process.argv.slice(2);
+let browserSocket;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(read) {
   for (let attempt = 0; attempt < 300; attempt++) {
@@ -20,6 +21,7 @@ async function main() {
   const tab = tabs.find(item => item.type === "page");
   if (!tab) throw new Error("Bundled browser did not create a page");
   const socket = new WebSocket(tab.webSocketDebuggerUrl);
+  browserSocket = socket;
   await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
   let id = 0;
   const pending = new Map();
@@ -39,7 +41,15 @@ async function main() {
     if (response.exceptionDetails) throw new Error(response.exceptionDetails.text);
     return response.result.value;
   };
-  const heading = text => until(() => evaluate("document.querySelector('h1')?.textContent === " + JSON.stringify(text)));
+  const heading = async text => {
+    try {
+      await until(() => evaluate("document.querySelector('h1')?.textContent === " + JSON.stringify(text)));
+      console.log("UI stage:", text);
+    } catch (error) {
+      console.error("UI state at failure:", await evaluate("document.body.innerText"));
+      throw error;
+    }
+  };
   const primary = async () => {
     await until(() => evaluate("Boolean(document.querySelector('#screen button.primary:not(:disabled)'))"));
     await evaluate("document.querySelector('#screen button.primary').click()");
@@ -94,4 +104,4 @@ async function main() {
   socket.close();
   console.log("PASS: standalone GUI, backup, V16 refusal, WRITE confirmation, final verification, close.");
 }
-main().catch(error => { console.error(error); process.exitCode = 1; });
+main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => browserSocket?.close());
