@@ -1,0 +1,45 @@
+name: Publish verified standalone preview
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful standalone workflow run ID
+        required: true
+        type: string
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      VERIFIED_RUN: ${{ inputs.run_id }}
+    steps:
+      - name: Verify the source run and fetch its exact artifacts
+        run: |
+          case "$VERIFIED_RUN" in *[!0-9]*|'') exit 1 ;; esac
+          conclusion=$(gh api "repos/$GH_REPO/actions/runs/$VERIFIED_RUN" --jq .conclusion)
+          test "$conclusion" = success
+          gh run download "$VERIFIED_RUN" --name standalone-windows-2022 --dir packages
+          gh run download "$VERIFIED_RUN" --name standalone-ubuntu-24.04 --dir packages
+          cd packages
+          sha256sum --check *.sha256
+      - name: Publish preview with test provenance
+        run: |
+          commit=$(gh api "repos/$GH_REPO/actions/runs/$VERIFIED_RUN" --jq .head_sha)
+          cat > notes.md <<EOF
+          FM-1 Rescue is a desktop IU/UX wrapper for Quixotic7/MvaveFM1Unbricker and the FM-1 Transporter.
+
+          These Windows x64 and Linux x64 archives include Python, pyserial, the unmodified pinned recovery engine, interface assets and the browser runtime.
+
+          Both extracted executables passed 14 unit tests and the complete simulated GUI recovery on Windows Server 2022 and Ubuntu 24.04. Test evidence is available at https://github.com/$GH_REPO/actions/runs/$VERIFIED_RUN.
+
+          The tests use a synthetic Transporter and a headless renderer. Real USB recovery and manual desktop verification on end-user hardware remain pending. Official V15 and the prepared Transporter UF2 are supplied separately. Builds are unsigned.
+
+          Original engine and credits: https://github.com/Quixotic7/MvaveFM1Unbricker
+          Transporter: https://github.com/kurogedelic/FM-1-transporter
+          EOF
+          gh release create v0.3.0-preview packages/* --target "$commit" --prerelease             --title "FM-1 Rescue 0.3.0 — Windows and Linux standalone preview"             --notes-file notes.md
