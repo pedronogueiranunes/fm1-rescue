@@ -165,7 +165,16 @@ class DesktopWindow:
         if self.monitor is not None:
             self.monitor.join(timeout=3)
         if self.process is not None and self.process.poll() is None:
-            self.process.terminate()
+            if sys.platform == "win32":
+                # Stop this private renderer's complete process tree. Terminating
+                # only Chrome's parent leaves child processes holding bundle files.
+                subprocess.run(
+                    ["taskkill", "/PID", str(self.process.pid), "/T", "/F"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    timeout=10, check=False,
+                )
+            else:
+                self.process.terminate()
             try:
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:

@@ -60,6 +60,20 @@ class DesktopTest(unittest.TestCase):
         window.server.shutdown.assert_not_called()
         self.assertFalse(window.session.closing)
 
+    def test_windows_close_stops_only_the_owned_browser_tree(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as temp:
+            window = desktop.DesktopWindow("chrome")
+            window.process = Mock()
+            window.process.pid = 4321
+            window.process.poll.return_value = None
+            with patch("desktop.DATA", Path(temp)), patch("desktop.sys.platform", "win32"), \
+                    patch("desktop.subprocess.run") as run:
+                window.close()
+            self.assertEqual(run.call_args.args[0],
+                             ["taskkill", "/PID", "4321", "/T", "/F"])
+            window.process.terminate.assert_not_called()
+            window.process.wait.assert_called_once_with(timeout=5)
+
     def test_simulated_sleep_protection_never_calls_os(self):
         with patch("platform_support.subprocess.Popen") as spawn:
             with KeepAwake(True) as awake:
