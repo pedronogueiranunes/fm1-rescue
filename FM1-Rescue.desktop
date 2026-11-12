@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FM-1 Rescue
+Comment=Recover your M-VAVE FM-1 · pedronogueira.dev
+Exec=sh -c "exec \\"\\$(dirname \\"\\$1\\")/FM1-Rescue.sh\\"" sh %k
+Icon=applications-multimedia
+Terminal=false
+Categories=AudioVideo;Utility;
+StartupWMClass=FM1-Rescue

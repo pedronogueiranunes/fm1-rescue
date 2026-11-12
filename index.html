@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#FF5A1F">
+<title>FM-1 Rescue</title>
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<script defer src="/app.js"></script>
+</head>
+<body>
+<header>
+<div class="brand"><img src="/logo.svg" width="44" height="44" alt=""><strong>FM-1 <span>Rescue</span></strong></div>
+<nav aria-label="App navigation">
+<button id="guide-nav">What you need</button>
+<button id="backup-nav">Backups</button>
+<select id="language" aria-label="Language / Idioma"><option value="en">English</option><option value="pt">Português</option></select>
+</nav>
+</header>
+<main>
+<aside><ol id="steps" aria-label="Recovery steps"></ol><p id="step-context"></p><a class="author" href="https://pedronogueira.dev" target="_blank" rel="noopener noreferrer" aria-label="Pedro Nogueira — pedronogueira.dev"><span class="author-domain">pedronogueira.dev</span></a></aside>
+<div class="workspace">
+<div class="session-bar"><span id="mode"></span><span id="step-count"></span></div>
+<section id="screen" aria-busy="false"></section>
+<p id="status" role="status"></p>
+<details id="details"><summary>Technical details</summary><pre id="log" tabindex="0"></pre></details>
+<footer><button id="close">Close assistant</button></footer>
+</div>
+</main>
+</body>
+</html>

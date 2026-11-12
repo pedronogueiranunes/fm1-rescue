@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Quixotic7/MvaveFM1Unbricker",
+  "commit": "0edc5add5e1412e7e68eefe2f84f2805e4b780fa",
+  "license": "MIT",
+  "files": ["fm1_transporter_recover.py", "fm1_unbrick.py", "transporter/xiao-wiring.svg", "LICENSE"],
+  "modifications": []
+}

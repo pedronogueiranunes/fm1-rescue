@@ -1,0 +1,26 @@
+AGENTS.md
+PLANO.md
+.review/
+desktop-data/
+test-logs/
+test-backups/
+logs/
+backups/
+firmware/
+.ci-fixtures/
+test-results/
+build-cache/
+build-dist/
+build-work/
+standalone/
+releases/
+FM-1 Rescue.app/
+__pycache__/
+*.pyc
+*.fwsc
+*.bin
+*.uf2
+*.dmg
+*.spec
+.DS_Store
+screenshots/
