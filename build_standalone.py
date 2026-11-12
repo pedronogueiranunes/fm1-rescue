@@ -57,7 +57,8 @@ def main():
         "--collect-submodules", "serial",
     ]
     for source in ("index.html", "app.js", "style.css", "logo.svg", "assets", "vendor"):
-        command.extend(["--add-data", str(ROOT / source) + os.pathsep + source])
+        destination = source if (ROOT / source).is_dir() else "."
+        command.extend(["--add-data", str(ROOT / source) + os.pathsep + destination])
     # Console mode leaves errors available to automated checks. The desktop client
     # redirects logs to its per-user data directory immediately at startup.
     if os.name == "nt":
@@ -65,6 +66,12 @@ def main():
     command.append(str(ROOT / "desktop.py"))
     subprocess.run(command, cwd=ROOT, check=True)
     distribution = ROOT / "build-dist/FM1-Rescue"
+    resources = distribution / "_internal"
+    for required in ("index.html", "app.js", "style.css", "logo.svg",
+                     "assets/fonts/silkscreen-latin-400-normal.woff2",
+                     "vendor/MvaveFM1Unbricker/transporter/xiao-wiring.svg"):
+        if not (resources / required).is_file():
+            raise RuntimeError("Missing bundled file: " + required)
     browser = fetch_browser(distribution)
     for name in ("README.md", "LICENSE", "THIRD_PARTY.md", "QUICK-START.md", "STANDALONE.md"):
         shutil.copy2(ROOT / name, distribution / name)

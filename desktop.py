@@ -195,6 +195,7 @@ def alert(message):
 
 def main():
     DATA.mkdir(parents=True, exist_ok=True)
+    original_stdout, original_stderr = sys.stdout, sys.stderr
     # pythonw and the macOS app have no terminal. Keep startup failures readable.
     with (DATA / "desktop.log").open("a", buffering=1) as log:
         sys.stdout = sys.stderr = log
@@ -232,6 +233,7 @@ def main():
             alert(str(exc) + "\n\nDetails are saved in desktop-data/desktop.log.")
         finally:
             lock.close()
+            sys.stdout, sys.stderr = original_stdout, original_stderr
 
 
 if __name__ == "__main__":
