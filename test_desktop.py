@@ -23,7 +23,7 @@ class DesktopTest(unittest.TestCase):
         with patch.object(Path, "is_file", return_value=True):
             self.assertEqual(desktop.find_browser(
                 "linux", {}, lambda name: "/usr/bin/chromium" if name == "chromium" else None),
-                "/usr/bin/chromium")
+                str(Path("/usr/bin/chromium")))
 
     def test_window_uses_private_profile_and_local_session(self):
         command = desktop.window_command("chrome", "http://127.0.0.1:12345/#token")
