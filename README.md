@@ -10,8 +10,8 @@ FM-1 Rescue presents the recovery procedure as a guided, bilingual assistant wit
 
 | Platform | Client | Verification |
 | --- | --- | --- |
-| Windows x64 | Standalone executable with Python, pyserial and browser runtime included | See the latest [standalone workflow](../../actions/workflows/standalone.yml) |
-| Linux x64 | Standalone folder with Python, pyserial and browser runtime included | See the latest [standalone workflow](../../actions/workflows/standalone.yml) |
+| Windows x64 | Standalone executable with Python, pyserial and browser runtime included | See the latest [standalone workflow](https://github.com/pedronogueiranunes/fm1-rescue/actions/workflows/standalone.yml) |
+| Linux x64 | Standalone folder with Python, pyserial and browser runtime included | See the latest [standalone workflow](https://github.com/pedronogueiranunes/fm1-rescue/actions/workflows/standalone.yml) |
 | macOS Apple Silicon | Native AppKit/WebKit client, using the prepared Python environment | Locally exercised in simulation. Build source is in macos/ |
 
 The Windows/Linux workflow extracts each package into a fresh path containing spaces, launches its executable, renders the interface with its bundled browser, and runs the complete simulated recovery. It checks the backup, V16 rejection, case-sensitive WRITE gate, V15 write plan, final verification and shutdown.
@@ -34,7 +34,7 @@ Use Python 3.10 or newer. The pinned engine is included under vendor/. The inter
 
 Open FM1-Rescue.cmd on Windows or FM1-Rescue.sh on Linux. These source launchers use an installed Chrome, Edge or Chromium browser. The standalone Windows/Linux builds include their own runtime.
 
-On macOS, build the native wrapper with macos/build.sh using Apple Command Line Tools, then open FM-1 Rescue.app. Keep the prepared venv folder beside this source folder. The source-only build still needs its matching app bundle metadata and icon from the local desktop distribution.
+On macOS, build the native wrapper with macos/build.sh using Apple Command Line Tools, then open FM-1 Rescue.app. Keep the prepared venv folder beside this source folder. The build script creates the native app bundle and its metadata from this checkout.
 
 The legacy browser interface can be started with python -B rescue.py --dry-run. Supply verified V15 through the file picker to exercise the final stages.
 
