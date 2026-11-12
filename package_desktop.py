@@ -5,7 +5,8 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 COMMON = (
     "AGENTS.md", "README.md", "DESKTOP.md", "QUICK-START.md", "PLANO.md",
-    "rescue.py", "desktop.py", "platform_support.py",
+    "rescue.py", "desktop.py", "platform_support.py", "app_paths.py",
+    "LICENSE", "THIRD_PARTY.md", "STANDALONE.md", "vendor",
     "index.html", "style.css", "app.js", "logo.svg",
     "test_rescue.py", "test_desktop.py",
 )
