@@ -265,7 +265,8 @@ function render(focus = false) {
     }
   }
   const status = get("status");
-  status.className = state.error || localError ? "error" : "";
+  status.className = state.error || localError ? "error" : state.busy ? "busy" : state.protect && phase !== "danger" ? "protect" : "";
+  if (state.busy && state.protect) status.classList.add("protect");
   status.textContent = state.busy ? (phase === "write" || state.protect ? t.protect : t.working)
     : t.errors[localError || state.error] || (state.protect && phase !== "danger" ? t.protect : "");
   if (focus) {
@@ -311,71 +312,154 @@ window.addEventListener("beforeunload", event => {
 poll();
 setInterval(poll, 650);
 
+const LINKS = {
+  author: "https://pedronogueira.dev/",
+  board: "https://www.seeedstudio.com/Seeed-Studio-XIAO-RP2040-Pre-Soldered-p-6333.html",
+  parts: "https://github.com/Quixotic7/MvaveFM1Unbricker/blob/main/TRANSPORTER-GUIDE.md#parts",
+  video: "https://www.youtube.com/watch?v=-zk3BxrubBM",
+  illustrated: "https://quixotic7.github.io/MvaveFM1Unbricker/",
+  dummies: "https://github.com/GoodPerson42/FM1-Unbricking-For-Dummies",
+  rescuebox: "https://thefirmwarehub.com/tools/rescue/",
+  official: "https://www.m-vave.com/download",
+  backups: "https://github.com/Quixotic7/FM1Backups",
+  upstream: "https://github.com/Quixotic7/MvaveFM1Unbricker",
+  help: "https://github.com/Quixotic7/MvaveFM1Unbricker/issues",
+  transporter: "https://github.com/kurogedelic/FM-1-transporter#hardware"
+};
 function renderGuide(root) {
   const en = lang === "en";
-  add(root, "h1", en ? "Your recovery kit" : "Seu kit de recuperação");
-  add(root, "p", en
-    ? "For an FM-1 that stays dark and never appears on USB. Gather these parts before connecting anything."
-    : "Para um FM-1 que fica apagado e nunca aparece no USB. Separe estas peças antes de conectar tudo.");
-  const shopping = add(root, "ul", "", "guide-list");
-  const parts = en ? [
-    ["1 × Seeed Studio XIAO RP2040, with headers fitted", "Choose the pre-soldered RP2040 version. The Transporter requires this chip. The RP2350 version is incompatible."],
-    ["1 × USB-C male to 4-pin female Dupont cable", "It must expose D+, D−, GND and VBUS separately. Individual female sockets fit the XIAO header pins."],
-    ["1 × USB data cable for the XIAO", "Use a USB-C connector at the board end and a connector that fits your computer."],
-    ["Insulating tape", "Cover the unused VBUS wire. A multimeter is helpful for identifying the cable wires."]
-  ] : [
-    ["1 × Seeed Studio XIAO RP2040 com pinos soldados", "Escolha a versão RP2040 com os pinos já soldados. O Transporter exige esse chip. A versão RP2350 é incompatível."],
-    ["1 × cabo USB-C macho para 4 conectores Dupont fêmea", "O cabo deve expor D+, D−, GND e VBUS separadamente. Os conectores fêmea individuais encaixam nos pinos da XIAO."],
-    ["1 × cabo USB de dados para a XIAO", "Use USB-C na ponta da placa e um conector compatível com seu computador na outra ponta."],
-    ["Fita isolante", "Cubra o fio VBUS que ficará solto. Um multímetro ajuda a identificar os fios do cabo."]
-  ];
-  for (const [title, description] of parts) {
-    const li = add(shopping, "li");
-    add(li, "strong", title);
-    add(li, "span", description);
-  }
-  add(root, "h2", en ? "Before you start" : "Antes de começar");
-  add(root, "p", en
-    ? "Fully charge the FM-1. The standalone app includes the recovery engine. Supply the prepared Transporter UF2 and official V15 firmware yourself."
-    : "Carregue completamente o FM-1. O aplicativo standalone inclui o motor de recuperação. Forneça o UF2 preparado do Transporter e o firmware V15 oficial.");
-  add(root, "h2", en ? "Connect, back up, recover" : "Conectar, salvar e recuperar");
+  const x = (english, portuguese) => en ? english : portuguese;
+  const link = (parent, key, label) => {
+    const a = add(parent, "a", label);
+    a.href = LINKS[key];
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    return a;
+  };
+  const section = (title, intro) => {
+    add(root, "h2", title);
+    if (intro) add(root, "p", intro);
+  };
+  const terms = (parent, list) => {
+    const row = add(parent, "span", "", "terms");
+    add(row, "em", x("Search for:", "Pesquise:"));
+    for (const term of list) add(row, "code", term);
+  };
+  const items = (list, className = "guide-list") => {
+    const ul = add(root, "ul", "", className);
+    for (const [title, detail, searchTerms] of list) {
+      const li = add(ul, "li");
+      add(li, "strong", title);
+      add(li, "span", detail);
+      if (searchTerms) terms(li, searchTerms);
+    }
+    return ul;
+  };
+
+  add(root, "h1", x("Don’t panic. Many “dead” FM-1s can be brought back.", "Calma. Muitos FM-1 “mortos” podem ser recuperados."));
+  add(root, "p", x(
+    "A failed update usually breaks the software inside the FM-1, not the hardware. This guide shows what to check, what to buy and what to do, in order. Nothing is written to your FM-1 until a verified backup is saved and you type WRITE.",
+    "Uma atualização que falha normalmente estraga o software do FM-1, não o equipamento. Este guia mostra o que conferir, o que comprar e o que fazer, em ordem. Nada é gravado no FM-1 antes de existir um backup verificado e de você digitar WRITE."));
+
+  section(x("1. Do you need this at all?", "1. Você precisa mesmo disso?"));
+  const fork = add(root, "ul", "", "guide-list");
+  let li = add(fork, "li");
+  add(li, "strong", x("The FM-1 shows up on your computer in any way", "O FM-1 aparece no computador de alguma forma"));
+  add(li, "span", x(
+    "As a USB drive, a MIDI device or something called WL82 UBOOT. You may not need any hardware. Try these free routes first:",
+    "Como disco USB, dispositivo MIDI ou algo chamado WL82 UBOOT. Talvez você não precise de nenhum hardware. Tente primeiro estes caminhos gratuitos:"));
+  let row = add(li, "span", "", "inline-links");
+  link(row, "rescuebox", x("Rescue box (The Firmware Hub)", "Rescue box (The Firmware Hub)"));
+  link(row, "illustrated", x("Illustrated guide with a “find my fix” wizard", "Guia ilustrado com assistente “encontre sua solução”"));
+  li = add(fork, "li");
+  add(li, "strong", x("Black screen and nothing on USB, on any cable or computer", "Tela preta e nada no USB, em qualquer cabo ou computador"));
+  add(li, "span", x(
+    "This is the case this app was made for. Keep reading: you need a small board and a cable, about three wires in total.",
+    "Este é o caso para o qual o app foi feito. Continue: você precisa de uma placa pequena e de um cabo, com três fios no total."));
+
+  section(x("2. Watch it done first", "2. Veja o processo feito antes"));
+  row = add(root, "p", "", "inline-links");
+  link(row, "video", x("Video by the creator of the recovery script: MVave FM-1 unbricking with an RP2040 and the FM-1 Transporter", "Vídeo do criador do script de recuperação: recuperando um FM-1 com um RP2040 e o FM-1 Transporter"));
+  row = add(root, "p", "", "inline-links");
+  link(row, "dummies", x("Step-by-step community guide with photos (RP2040-Zero, Windows)", "Guia da comunidade com fotos, passo a passo (RP2040-Zero, Windows)"));
+
+  section(x("3. What to buy", "3. O que comprar"), x(
+    "Copy the search terms into any online store. Prices vary by country, and marketplace listings change, so always check the checklist under each item.",
+    "Copie os termos de pesquisa em qualquer loja online. Preços variam por país e os anúncios mudam, então confira a lista de verificação de cada item."));
+  items([
+    [x("A: Microcontroller board with an RP2040 chip", "A: Placa com chip RP2040"),
+     x("Best choice: Seeed Studio XIAO RP2040 with headers already soldered. The original author used it. Also confirmed by a community guide: RP2040-Zero. Wire GP0 or label 0 to D+ and GP1 or label 1 to D−.",
+       "Melhor escolha: Seeed Studio XIAO RP2040 com pinos já soldados, usada pelo autor original. Também confirmada por um guia da comunidade: RP2040-Zero. Ligue GP0 ou rótulo 0 ao D+ e GP1 ou rótulo 1 ao D−."),
+     ["Seeed Studio XIAO RP2040 pre-soldered", "XIAO RP2040 headers", "RP2040-Zero with pins", "Waveshare RP2040-Zero"]],
+    [x("B: Cable that plugs into the FM-1’s USB-C port", "B: Cabo que encaixa na porta USB-C do FM-1"),
+     x("It must be a USB-C male plug with 4 separate wires: red (VBUS), white (D−), green (D+) and black (GND). With a multimeter on continuity you can confirm which wire is which before connecting. Alternative: cut a spare USB-A to USB-C data cable and identify the same four colors. Avoid USB-C to USB-C cables.",
+       "Precisa ser um plugue USB-C macho com 4 fios separados: vermelho (VBUS), branco (D−), verde (D+) e preto (GND). Com um multímetro em continuidade você confirma qual fio é qual antes de ligar. Alternativa: cortar um cabo de dados USB-A para USB-C que você não use e identificar as mesmas quatro cores. Evite cabos USB-C para USB-C."),
+     ["USB-C male to 4 pin Dupont female cable", "USB type C male pigtail 4 wire", "USB-C male plug breakout cable 4 pin"]],
+    [x("C: Cable from the board to your computer", "C: Cabo da placa até o computador"),
+     x("A real USB data cable, not a charge-only one. Many cheap cables only charge.", "Um cabo USB de dados de verdade, não só de carga. Muitos cabos baratos só carregam."),
+     ["USB-C data cable", "USB-A to USB-C data cable 480Mbps"]],
+    [x("D: Small extras", "D: Pequenos extras"),
+     x("Insulating tape for the unused red wire. Female Dupont jumper wires if your cable ends are bare or your board has pins. A multimeter is optional but helpful.",
+       "Fita isolante para o fio vermelho que fica solto. Fios jumper Dupont fêmea se as pontas do seu cabo forem soltas ou a placa tiver pinos. Um multímetro é opcional, mas ajuda."),
+     ["electrical insulating tape", "female to female dupont jumper wires", "multimeter continuity"]]
+  ]);
+  const warn = add(root, "p", x(
+    "Do not buy RP2350 boards (Pico 2, XIAO RP2350). The original project reports that they break the Transporter. A plain Raspberry Pi Pico (RP2040) has not been confirmed with the file this app uses. The Debug Probe works too, but needs a different Transporter file that this app does not accept.",
+    "Não compre placas RP2350 (Pico 2, XIAO RP2350). O projeto original informa que elas não funcionam com o Transporter. O Raspberry Pi Pico comum (RP2040) não foi confirmado com o arquivo que este app usa. O Debug Probe também funciona, mas precisa de outro arquivo do Transporter que este app não aceita."), "notice");
+  link(add(warn, "span", " "), "transporter", x("Supported boards", "Placas compatíveis"));
+
+  section(x("4. Files you need", "4. Arquivos necessários"));
+  items([
+    [x("Official V15 firmware", "Firmware V15 oficial"),
+     x("Included in the standalone app, and the app still checks its hash. Otherwise use the verified copy below. M-VAVE’s own page may now offer only V16, which this recovery cannot write.",
+       "Incluído no app standalone, e o app ainda confere o hash. Caso contrário, use a cópia verificada abaixo. A página da M-VAVE pode oferecer só o V16, que esta recuperação não consegue gravar.")],
+    [x("Transporter file for the board (.uf2)", "Arquivo do Transporter para a placa (.uf2)"),
+     x("Made by the original tool’s setup command. It downloads the loader and checks every hash. Step 1 of this app asks for it.",
+       "Gerado pelo comando setup da ferramenta original. Ele baixa o loader e confere todos os hashes. A etapa 1 deste app pede esse arquivo.")]
+  ]);
+  row = add(root, "p", "", "inline-links");
+  link(row, "official", x("Official M-VAVE download page", "Página oficial de download da M-VAVE"));
+  link(row, "backups", x("Verified V15 copy (FM1Backups)", "Cópia verificada do V15 (FM1Backups)"));
+  link(row, "upstream", x("Original recovery tool (setup)", "Ferramenta de recuperação original (setup)"));
+
+  section(x("5. Before you connect anything", "5. Antes de conectar qualquer coisa"));
+  items([
+    [x("Charge the FM-1 fully", "Carregue o FM-1 por completo"), x("It runs on its own battery during recovery.", "Ele funciona com a própria bateria durante a recuperação.")],
+    [x("Never connect VBUS (red)", "Nunca conecte o VBUS (vermelho)"), x("Tape it off. Only three wires are used: D+, D− and GND.", "Isole com fita. Só três fios são usados: D+, D− e GND.")],
+    [x("Swapped D+ and D− is harmless", "Trocar D+ e D− não estraga nada"), x("The FM-1 is just not detected. Swap them and retry.", "O FM-1 só não é detectado. Inverta e tente de novo.")],
+    [x("Take your time", "Sem pressa"), x("Nothing here is urgent. Retrying is safe until the write step.", "Nada aqui é urgente. Tentar de novo é seguro até a etapa de gravação.")]
+  ]);
+
+  section(x("6. The steps in this app", "6. As etapas neste app"));
   const sequence = add(root, "ol", "", "guide-list");
-  const actions = en ? [
+  const actions = x([
     "Prepare the XIAO in step 1. Keep the FM-1 off while wiring D6 → D+, D7 → D− and GND → GND. Leave VBUS insulated and disconnected. Follow pin labels because cable colors vary.",
     "Reconnect the XIAO. Turn on the FM-1 only when the assistant asks, after the console reader is running.",
     "Create the double-read backup, choose verified V15, review the write and type WRITE. Keep everything connected through verification.",
     "When recovery is verified, switch off the FM-1, remove the three wires and switch it on again. Install any later firmware through its regular installer with a full battery."
-  ] : [
+  ], [
     "Prepare a XIAO na etapa 1. Com o FM-1 desligado, ligue D6 → D+, D7 → D− e GND → GND. Deixe o VBUS isolado e desconectado. Siga os nomes dos pinos, pois as cores variam.",
     "Reconecte a XIAO. Ligue o FM-1 só quando o assistente pedir, depois de iniciar a leitura do console.",
     "Crie o backup de duas leituras, escolha o V15 verificado, confira o plano e digite WRITE. Mantenha tudo conectado até o fim da verificação.",
     "Após a recuperação ser verificada, desligue o FM-1, retire os três fios e ligue-o novamente. Instale outros firmwares pelo instalador normal com a bateria cheia."
-  ];
+  ]);
   for (const action of actions) add(sequence, "li", action);
-  add(root, "p", en
-    ? "The double-click launcher starts a simulation. Real recovery uses FM1-Rescue.command --live. Real-hardware validation of this interface is still pending."
-    : "O launcher de duplo clique inicia uma simulação. A recuperação real usa FM1-Rescue.command --live. A validação desta interface com equipamento real ainda está pendente.", "notice");
-  const links = add(root, "div", "", "guide-links");
-  for (const [label, href] of [
-    [en ? "Buy the RP2040 board" : "Comprar a placa RP2040", "https://www.seeedstudio.com/Seeed-Studio-XIAO-RP2040-Pre-Soldered-p-6333.html"],
-    [en ? "Parts list & cable example" : "Lista de peças e exemplo de cabo", "https://github.com/Quixotic7/MvaveFM1Unbricker/blob/main/TRANSPORTER-GUIDE.md#parts"]
-  ]) {
-    const link = add(links, "a", label);
-    link.href = href;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-  }
+
+  section(x("Stuck? You are not the first.", "Travou? Você não é o primeiro."));
+  row = add(root, "p", "", "inline-links");
+  link(row, "help", x("Ask on the original project’s issue page", "Pergunte na página de issues do projeto original"));
+  link(row, "illustrated", x("Illustrated guide", "Guia ilustrado"));
+  link(row, "video", x("Video", "Vídeo"));
+  add(root, "p", x(
+    "The double-click launcher starts a simulation so you can rehearse safely. Real recovery uses FM1-Rescue.command --live. Real-hardware validation of this interface is still pending.",
+    "O launcher de duplo clique inicia uma simulação para você ensaiar com segurança. A recuperação real usa FM1-Rescue.command --live. A validação desta interface com equipamento real ainda está pendente."), "notice");
   button(add(root, "div", "", "actions"), t.resume, () => { view = ""; render(true); }, true);
 }
 
 document.addEventListener("click", async event => {
   const link = event.target.closest("a[href]");
   if (!link) return;
-  const destinations = {
-    "https://pedronogueira.dev/": "author",
-    "https://www.seeedstudio.com/Seeed-Studio-XIAO-RP2040-Pre-Soldered-p-6333.html": "board",
-    "https://github.com/Quixotic7/MvaveFM1Unbricker/blob/main/TRANSPORTER-GUIDE.md#parts": "parts"
-  };
+  const destinations = Object.fromEntries(Object.entries(LINKS).map(([key, url]) => [url, key]));
   const destination = destinations[link.href];
   if (!destination) return;
   event.preventDefault();

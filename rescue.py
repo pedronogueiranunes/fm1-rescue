@@ -25,6 +25,8 @@ import fm1_transporter_recover as tool
 
 V15 = ROOT.parent / "FM1Backups" / "V15-FM-1.fwsc"
 if not V15.is_file():
+    V15 = ROOT / "firmware" / "V15-FM-1.fwsc"  # bundled with the standalone app; hash is still checked
+if not V15.is_file():
     V15 = DATA_ROOT / "firmware" / "V15-FM-1.fwsc"
 V15_HASH = "db1642b2b6fa5c2cccb11ffd13878068bb28601678d3644049f99dc40e7edb8a"
 V16_HASH = "d017fb65e70aca97ee29d944470c3515a74581df5c0576bf70de917c7b2b61d5"
@@ -387,6 +389,15 @@ class Handler(BaseHTTPRequestHandler):
                 b"author": "https://pedronogueira.dev",
                 b"board": "https://www.seeedstudio.com/Seeed-Studio-XIAO-RP2040-Pre-Soldered-p-6333.html",
                 b"parts": "https://github.com/Quixotic7/MvaveFM1Unbricker/blob/main/TRANSPORTER-GUIDE.md#parts",
+                b"video": "https://www.youtube.com/watch?v=-zk3BxrubBM",
+                b"illustrated": "https://quixotic7.github.io/MvaveFM1Unbricker/",
+                b"dummies": "https://github.com/GoodPerson42/FM1-Unbricking-For-Dummies",
+                b"rescuebox": "https://thefirmwarehub.com/tools/rescue/",
+                b"official": "https://www.m-vave.com/download",
+                b"backups": "https://github.com/Quixotic7/FM1Backups",
+                b"upstream": "https://github.com/Quixotic7/MvaveFM1Unbricker",
+                b"help": "https://github.com/Quixotic7/MvaveFM1Unbricker/issues",
+                b"transporter": "https://github.com/kurogedelic/FM-1-transporter#hardware",
             }
             destination = links.get(self.rfile.read(size))
             if destination is None:

@@ -24,3 +24,5 @@ __pycache__/
 *.spec
 .DS_Store
 screenshots/
+build-dist-mac/
+build-work-mac/

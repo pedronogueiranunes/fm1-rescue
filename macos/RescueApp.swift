@@ -103,17 +103,22 @@ final class RescueApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavi
     }
 
     private func startBackend() {
-        guard let root = locateProject() else {
+        // Standalone build: the recovery backend is bundled inside the app.
+        let bundled = Bundle.main.resourceURL?.appendingPathComponent("backend/FM1-Rescue-backend")
+        let standalone = bundled.map { FileManager.default.isExecutableFile(atPath: $0.path) } ?? false
+        guard let root = standalone ? Bundle.main.resourceURL : locateProject() else {
             showError("The fm1-rescue-ui folder could not be found.")
             return
         }
         projectRoot = root
-        let python = root.deletingLastPathComponent().appendingPathComponent("venv/bin/python")
+        let python = standalone ? bundled! : root.deletingLastPathComponent().appendingPathComponent("venv/bin/python")
         guard FileManager.default.isExecutableFile(atPath: python.path) else {
             showError("The prepared Python environment is missing. Keep the venv folder beside fm1-rescue-ui.")
             return
         }
-        let dataFolder = root.appendingPathComponent("desktop-data")
+        let dataFolder = standalone
+            ? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/FM1Rescue/desktop-data")
+            : root.appendingPathComponent("desktop-data")
         do {
             try FileManager.default.createDirectory(at: dataFolder, withIntermediateDirectories: true)
             let logURL = dataFolder.appendingPathComponent("macos.log")
@@ -124,10 +129,10 @@ final class RescueApp: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavi
             try logHandle?.seekToEnd()
             let process = Process()
             process.executableURL = python
-            process.currentDirectoryURL = root
+            process.currentDirectoryURL = standalone ? dataFolder : root
             let live = CommandLine.arguments.contains("--live")
-            process.arguments = ["-B", root.appendingPathComponent("rescue.py").path,
-                                 live ? "--live" : "--dry-run", "--no-browser"]
+            process.arguments = (standalone ? [] : ["-B", root.appendingPathComponent("rescue.py").path])
+                + [live ? "--live" : "--dry-run", "--no-browser"]
             window.title = live ? "FM-1 Rescue" : "FM-1 Rescue — Simulation"
             let pipe = Pipe()
             outputPipe = pipe
