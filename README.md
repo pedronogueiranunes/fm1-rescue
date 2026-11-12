@@ -1,5 +1,9 @@
 # FM-1 Rescue
 
+[![Standalone builds](https://github.com/pedronogueiranunes/fm1-rescue/actions/workflows/standalone.yml/badge.svg)](https://github.com/pedronogueiranunes/fm1-rescue/actions/workflows/standalone.yml)
+
+[Download the Windows/Linux standalone preview](https://github.com/pedronogueiranunes/fm1-rescue/releases/tag/v0.3.0-preview) · [Verification evidence](VERIFICATION.md)
+
 A desktop user interface and UX wrapper for recovering an M-VAVE FM-1 with the FM-1 Transporter.
 
 FM-1 Rescue presents the recovery procedure as a guided, bilingual assistant with wiring instructions, verified backups, firmware checks, explicit write authorization, progress logs and final verification.
@@ -10,8 +14,8 @@ FM-1 Rescue presents the recovery procedure as a guided, bilingual assistant wit
 
 | Platform | Client | Verification |
 | --- | --- | --- |
-| Windows x64 | Standalone executable with Python, pyserial and browser runtime included | See the latest [standalone workflow](https://github.com/pedronogueiranunes/fm1-rescue/actions/workflows/standalone.yml) |
-| Linux x64 | Standalone folder with Python, pyserial and browser runtime included | See the latest [standalone workflow](https://github.com/pedronogueiranunes/fm1-rescue/actions/workflows/standalone.yml) |
+| Windows x64 | Standalone executable with Python, pyserial and browser runtime included | Passed packaged-executable and simulated GUI checks, see [evidence](VERIFICATION.md) |
+| Linux x64 | Standalone folder with Python, pyserial and browser runtime included | Passed packaged-executable and simulated GUI checks, see [evidence](VERIFICATION.md) |
 | macOS Apple Silicon | Native AppKit/WebKit client, using the prepared Python environment | Locally exercised in simulation. Build source is in macos/ |
 
 The Windows/Linux workflow extracts each package into a fresh path containing spaces, launches its executable, renders the interface with its bundled browser, and runs the complete simulated recovery. It checks the backup, V16 rejection, case-sensitive WRITE gate, V15 write plan, final verification and shutdown.
